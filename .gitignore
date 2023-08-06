@@ -1,0 +1,7 @@
+*.exe
+*.pth
+*.pt
+*.gz
+*.tar
+*.tar.gz
+*.vscode

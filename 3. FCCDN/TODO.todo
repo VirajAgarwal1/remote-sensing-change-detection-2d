@@ -1,0 +1,13 @@
+✔ Understand the FCCDN paper @started(23-07-13 10:11) @done(23-07-13 16:28) @lasted(6h17m54s)
+☐ Fix the LEVIR-CD dataset... You've only been working with test dataset till now.... @started(23-07-15 15:00)
+☐ Code -> PART-1
+    ☐ Understand the code
+    ✔ Run an inference succesfully @started(23-07-13 20:48) @done(23-07-13 21:53) @lasted(1h5m25s)
+    ✔ Add the Dataloading Code (LEVIR-CD) @started(23-07-13 20:37) @done(23-07-13 20:47) @lasted(10m54s)
+☐ Code -> PART-2
+    ✔ Add Training Code @started(23-07-13 22:10) @done(23-07-13 22:53) @lasted(43m38s)
+    ☐ Add Receptive field visualization code
+    ☐ Add MCC (Matthews Correlation Coefficient) code to the training code
+☐ Train using unsupervised learning
+☐ Train using supervised learning
+☐ Find code online which can make a recpetive field map (or heat map) for your model

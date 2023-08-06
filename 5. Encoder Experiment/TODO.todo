@@ -1,0 +1,13 @@
+*Checklist / steps*
+☐ 1. We need to write code which is model independant
+☐ 2. The code will take the pretrained-encoder of the model and make it run inferences on the validation dataset.
+☐ 3. For each datapoint we will collect the distance between the 2 encodings it generates. This distance should be a scalar value.
+☐ 4. Now we will assign colours to these distances.
+☐ 5. There will be 4 colours. Green, Red, Blue and Yellow
+☐ 6. Meaning of the colours ->
+    ☐ a. Green means that there was no change between the 2 images
+    ☐ b. Blue means that images were striped of the part that had the change and then inferenced
+    ☐ c. Red means that there was change between the 2 images
+    ☐ d. Yellow means that images were striped of the part which had no change and then inferenced.
+☐ 7. Once this is done for the model we will save the results in a file.
+☐ 8. Then change the model and repeat from step 1.

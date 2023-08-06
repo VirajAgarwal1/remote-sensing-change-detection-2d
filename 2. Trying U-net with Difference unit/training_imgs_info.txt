@@ -1,0 +1,7 @@
+Images Split Metadata
+
+Number of images with change = 935
+Number of images with no change = 1113
+
+Number of pixels in images with change = 6837370.0
+Number of pixels in images with no change = 127380358.0
