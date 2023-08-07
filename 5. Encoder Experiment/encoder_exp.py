@@ -5,6 +5,7 @@ import torch
 from encoder import Encoder
 from distance import scalar_dist
 import pickle
+import os
 from dataloader import val_dataset
 
 
@@ -47,7 +48,8 @@ def split_image_label (imgA :torch.Tensor, label :torch.Tensor):
 
 
 # MODEL BEING EXPERIMENTED WITH
-MODEL_NAME  = "<model_name>"
+MODEL_NAME  = "a2net" # OPTIONS: "a2net" "fccdn" 
+
 
 # Data to be collected during the loop
 green_data = []     # Green means that there was no change between the 2 images
@@ -59,16 +61,20 @@ num_red_data = 0
 yellow_data = []    # Yellow means that images were striped of the part which had no change and then inferenced
 num_yellow_data = 0
 
+
+model_enc = Encoder(MODEL_NAME)
+model_enc.eval()
 # Loop over all the datapoints in the validation dataset
+print("Starting the loop over val_dataset for " + MODEL_NAME + " model")
 for i in range(len(val_dataset)):
+    print("...{}".format(i))
     sample = val_dataset[i]
     imgA = sample["img_A"]
     imgB = sample["img_B"]
     label = sample["label"]
 
     # Encodings for green and red data
-    model_enc = Encoder(MODEL_NAME)
-    enc1, enc2 = model_enc(imgA, imgB)
+    enc1, enc2 = model_enc(imgA.reshape((1,3,256,256)), imgB.reshape((1,3,256,256)))
     if label.max() > 0:
         # Red Data
         num_red_data += 1
@@ -83,8 +89,8 @@ for i in range(len(val_dataset)):
     imgA_1, imgA_2 = split_image_label(imgA, label)
     imgB_1, imgB_2 = split_image_label(imgB, label)
 
-    enc1_2 , enc2_2 = model_enc(imgA_1, imgB_1) # Encodings for change part of images -> Yellow Data encodings
-    enc1_3 , enc2_3 = model_enc(imgA_2, imgB_2) # Encodings for no-change part of images -> Blue Data encodings
+    enc1_2 , enc2_2 = model_enc(imgA_1.reshape((1,3,256,256)), imgB_1.reshape((1,3,256,256))) # Encodings for change part of images -> Yellow Data encodings
+    enc1_3 , enc2_3 = model_enc(imgA_2.reshape((1,3,256,256)), imgB_2.reshape((1,3,256,256))) # Encodings for no-change part of images -> Blue Data encodings
 
     # Blue Data
     num_blue_data += 1
@@ -94,7 +100,7 @@ for i in range(len(val_dataset)):
     num_yellow_data += 1
     yellow_data.append(scalar_dist(enc1_2, enc2_2))
 
-write_list(green_data, MODEL_NAME+"-green_data")
-write_list(blue_data, MODEL_NAME+"-blue_data")
-write_list(red_data, MODEL_NAME+"-red_data")
-write_list(yellow_data, MODEL_NAME+"-yellow_data")
+write_list(green_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-green_data.txt")
+write_list(blue_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-blue_data.txt")
+write_list(red_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-red_data.txt")
+write_list(yellow_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-yellow_data.txt")

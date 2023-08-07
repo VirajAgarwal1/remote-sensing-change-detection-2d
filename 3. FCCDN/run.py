@@ -35,8 +35,8 @@ if __name__ == '__main__':
 
     cfg = Config()
     model = GenerateNet(cfg)
-    checkpoint = torch.load("./training/FCCDN_plain/best_model/best_model.pt", map_location=torch.device('cpu'))
-    model.load_state_dict(checkpoint['state_dict'])
+    checkpoint = torch.load("./pretrained/FCCDN_test_LEVIR_CD.pth", map_location=torch.device('cpu'))
+    model.load_state_dict(checkpoint, strict=False)
 
     # # define model functions
     # def model_fn() -> nn.Module:

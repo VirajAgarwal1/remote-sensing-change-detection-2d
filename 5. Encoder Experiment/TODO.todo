@@ -1,13 +1,13 @@
 *Checklist / steps*
-☐ 1. We need to write code which is model independant
-☐ 2. The code will take the pretrained-encoder of the model and make it run inferences on the validation dataset.
-☐ 3. For each datapoint we will collect the distance between the 2 encodings it generates. This distance should be a scalar value.
-☐ 4. Now we will assign colours to these distances.
-☐ 5. There will be 4 colours. Green, Red, Blue and Yellow
-☐ 6. Meaning of the colours ->
-    ☐ a. Green means that there was no change between the 2 images
-    ☐ b. Blue means that images were striped of the part that had the change and then inferenced
-    ☐ c. Red means that there was change between the 2 images
-    ☐ d. Yellow means that images were striped of the part which had no change and then inferenced.
-☐ 7. Once this is done for the model we will save the results in a file.
-☐ 8. Then change the model and repeat from step 1.
+✔ 1. We need to write code which is model independant @done(23-08-07 17:46)
+✔ 2. The code will take the pretrained-encoder of the model and make it run inferences on the validation dataset. @done(23-08-07 17:46)
+✔ 3. For each datapoint we will collect the distance between the 2 encodings it generates. This distance should be a scalar value. @done(23-08-07 17:46)
+✔ 4. Now we will assign colours to these distances. @done(23-08-07 17:46)
+✔ 5. There will be 4 colours. Green, Red, Blue and Yellow @done(23-08-07 17:46)
+✔ 6. Meaning of the colours -> @done(23-08-07 17:46)
+    ✔ a. Green means that there was no change between the 2 images [EXPECTED: Small Values] @done(23-08-07 17:46)
+    ✔ b. Blue means that images were striped of the part that had the change and then inferenced [EXPECTED: Small Values] @done(23-08-07 17:46)
+    ✔ c. Red means that there was change between the 2 images [EXPECTED: Big Values] @done(23-08-07 17:46)
+    ✔ d. Yellow means that images were striped of the part which had no change and then inferenced. [EXPECTED: Big Values] @done(23-08-07 17:46)
+✔ 7. Once this is done for the model we will save the results in a file. @done(23-08-07 17:46)
+✔ 8. Then change the model and repeat from step 1. @done(23-08-07 17:46)
