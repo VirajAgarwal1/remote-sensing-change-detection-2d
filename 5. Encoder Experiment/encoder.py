@@ -33,7 +33,7 @@ def fccdn_model_enc ():
 def a2net_model_enc ():
     from A2_network.model import BaseNet
     model = BaseNet(3,1)
-    checkpoint = torch.load("./FCCDN_network/best_model.pt", map_location=torch.device('cpu'))
+    checkpoint = torch.load("./A2_network/best_model.pth", map_location=torch.device('cpu'))
     # model.load_state_dict(checkpoint['state_dict'])
     model.load_state_dict(checkpoint, strict=False)
     return model
