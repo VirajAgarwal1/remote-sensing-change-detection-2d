@@ -193,7 +193,7 @@ class StageModule(nn.Module):
 
 
 class SwinTransformer(nn.Module):
-    def __init__(self, *, hidden_dim, layers, heads, channels=3, head_dim=32, window_size=7,
+    def __init__(self, *, hidden_dim, layers, heads, channels=3, head_dim=32, window_size=8, ##### CHANGED window-size to 8
                  downscaling_factors=(4, 2, 2, 2), relative_pos_embedding=True):
         super().__init__()
 
@@ -210,30 +210,30 @@ class SwinTransformer(nn.Module):
                                   downscaling_factor=downscaling_factors[3], num_heads=heads[3], head_dim=head_dim,
                                   window_size=window_size, relative_pos_embedding=relative_pos_embedding)
 
-    def forward(self, img):
+    def forward(self, img): ##### CHANGED : Removed the flattening layer and MLP layer. Also made the intermediate results output also
         x = self.stage1(img)
-        out1 = x.detach().clone()
+        out1 = x.clone()
         x = self.stage2(x)
-        out2 = x.detach().clone()
+        out2 = x.clone()
         x = self.stage3(x)
-        out3 = x.detach().clone()
+        out3 = x.clone()
         x = self.stage4(x)
-        out4 = x.detach().clone()
+        out4 = x.clone()
         
         return [out1, out2, out3, out4]
 
 
-def swin_t(hidden_dim=96, layers=(2, 2, 6, 2), heads=(3, 6, 12, 24), **kwargs):
+def swin_t_encoder(hidden_dim=96, layers=(2, 2, 6, 2), heads=(3, 6, 12, 24), **kwargs):
     return SwinTransformer(hidden_dim=hidden_dim, layers=layers, heads=heads, **kwargs)
 
 
-def swin_s(hidden_dim=96, layers=(2, 2, 18, 2), heads=(3, 6, 12, 24), **kwargs):
+def swin_s_encoder(hidden_dim=96, layers=(2, 2, 18, 2), heads=(3, 6, 12, 24), **kwargs):
     return SwinTransformer(hidden_dim=hidden_dim, layers=layers, heads=heads, **kwargs)
 
 
-def swin_b(hidden_dim=128, layers=(2, 2, 18, 2), heads=(4, 8, 16, 32), **kwargs):
+def swin_b_encoder(hidden_dim=128, layers=(2, 2, 18, 2), heads=(4, 8, 16, 32), **kwargs):
     return SwinTransformer(hidden_dim=hidden_dim, layers=layers, heads=heads, **kwargs)
 
 
-def swin_l(hidden_dim=192, layers=(2, 2, 18, 2), heads=(6, 12, 24, 48), **kwargs):
+def swin_l_encoder(hidden_dim=192, layers=(2, 2, 18, 2), heads=(6, 12, 24, 48), **kwargs):
     return SwinTransformer(hidden_dim=hidden_dim, layers=layers, heads=heads, **kwargs)
