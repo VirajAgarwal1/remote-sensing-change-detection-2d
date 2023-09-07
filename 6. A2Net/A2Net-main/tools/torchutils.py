@@ -10,7 +10,7 @@ from torch.nn import MaxPool1d, AvgPool1d
 from torch import Tensor
 from typing import Iterable, Set, Tuple
 
-__all__ = ['cls_accuracy']
+__all__ = ["cls_accuracy"]
 
 
 def visualize_imgs(*imgs):
@@ -20,15 +20,16 @@ def visualize_imgs(*imgs):
     :return:
     """
     import matplotlib.pyplot as plt
+
     nums = len(imgs)
     if nums > 1:
         fig, axs = plt.subplots(1, nums)
         for i, image in enumerate(imgs):
-            axs[i].imshow(image, cmap='jet')
+            axs[i].imshow(image, cmap="jet")
     elif nums == 1:
         fig, ax = plt.subplots(1, nums)
         for i, image in enumerate(imgs):
-            ax.imshow(image, cmap='jet')
+            ax.imshow(image, cmap="jet")
         plt.show()
     plt.show()
 
@@ -42,7 +43,7 @@ def minmax(tensor):
     return min_, max_
 
 
-def norm_tensor(tensor, min_=None, max_=None, mode='minmax'):
+def norm_tensor(tensor, min_=None, max_=None, mode="minmax"):
     """
     输入：N*C*H*W / C*H*W / H*W
     输出：在H*W维度的归一化的与原始等大的图
@@ -50,13 +51,13 @@ def norm_tensor(tensor, min_=None, max_=None, mode='minmax'):
     assert tensor.ndim >= 2
     shape = tensor.shape
     tensor = tensor.view([*shape[:-2], shape[-1] * shape[-2]])
-    if mode == 'minmax':
+    if mode == "minmax":
         if min_ is None:
             min_, _ = tensor.min(-1, keepdim=True)
         if max_ is None:
             max_, _ = tensor.max(-1, keepdim=True)
         tensor = (tensor - min_) / (max_ - min_ + 0.00000000001)
-    elif mode == 'thres':
+    elif mode == "thres":
         N = tensor.shape[-1]
         thres_a = 0.001
         top_k = round(thres_a * N)
@@ -66,15 +67,18 @@ def norm_tensor(tensor, min_=None, max_=None, mode='minmax'):
         min_ = min_.unsqueeze(-1)
         tensor = (tensor - min_) / (max_ - min_ + 0.00000000001)
 
-    elif mode == 'std':
+    elif mode == "std":
         mean, std = torch.std_mean(tensor, [-1], keepdim=True)
         tensor = (tensor - mean) / std
         min_, _ = tensor.min(-1, keepdim=True)
         max_, _ = tensor.max(-1, keepdim=True)
         tensor = (tensor - min_) / (max_ - min_ + 0.00000000001)
-    elif mode == 'exp':
+    elif mode == "exp":
         tai = 1
-        tensor = torch.nn.functional.softmax(tensor / tai, dim=-1, )
+        tensor = torch.nn.functional.softmax(
+            tensor / tai,
+            dim=-1,
+        )
         min_, _ = tensor.min(-1, keepdim=True)
         max_, _ = tensor.max(-1, keepdim=True)
         tensor = (tensor - min_) / (max_ - min_ + 0.00000000001)
@@ -113,6 +117,7 @@ def visulize_features(features, normalize=False):
     可视化特征图，各维度make grid到一起
     """
     from torchvision.utils import make_grid
+
     assert features.ndim == 4
     b, c, h, w = features.shape
     features = features.view((b * c, 1, h, w))
@@ -129,6 +134,7 @@ def visualize_tensors(*tensors):
     :return:
     """
     import matplotlib.pyplot as plt
+
     # from misc.torchutils import tensor2np
     images = []
     for tensor in tensors:
@@ -140,12 +146,12 @@ def visualize_tensors(*tensors):
     if nums > 1:
         fig, axs = plt.subplots(1, nums)
         for i, image in enumerate(images):
-            axs[i].imshow(image, cmap='jet')
+            axs[i].imshow(image, cmap="jet")
         plt.show()
     elif nums == 1:
         fig, ax = plt.subplots(1, nums)
         for i, image in enumerate(images):
-            ax.imshow(image, cmap='jet')
+            ax.imshow(image, cmap="jet")
         plt.show()
 
 
@@ -168,7 +174,7 @@ def np_to_tensor(image):
 def seed_torch(seed=2019):
     # 加入以下随机种子，数据输入，随机扩充等保持一致
     random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -219,9 +225,15 @@ class ChannelMaxPool(MaxPool1d):
     def forward(self, input):
         n, c, w, h = input.size()
         input = input.view(n, c, w * h).permute(0, 2, 1)
-        pooled = F.max_pool1d(input, self.kernel_size, self.stride,
-                              self.padding, self.dilation, self.ceil_mode,
-                              self.return_indices)
+        pooled = F.max_pool1d(
+            input,
+            self.kernel_size,
+            self.stride,
+            self.padding,
+            self.dilation,
+            self.ceil_mode,
+            self.return_indices,
+        )
         _, _, c = pooled.size()
         pooled = pooled.permute(0, 2, 1)
         return pooled.view(n, c, w, h)
@@ -231,14 +243,13 @@ class ChannelAvePool(AvgPool1d):
     def forward(self, input):
         n, c, w, h = input.size()
         input = input.view(n, c, w * h).permute(0, 2, 1)
-        pooled = F.avg_pool1d(input, self.kernel_size, self.stride,
-                              self.padding)
+        pooled = F.avg_pool1d(input, self.kernel_size, self.stride, self.padding)
         _, _, c = pooled.size()
         pooled = pooled.permute(0, 2, 1)
         return pooled.view(n, c, w, h)
 
 
-def cross_entropy(input, target, weight=None, reduction='mean', ignore_index=255):
+def cross_entropy(input, target, weight=None, reduction="mean", ignore_index=255):
     """
     logSoftmax_with_loss
     :param input: torch.Tensor, N*C*H*W
@@ -250,10 +261,17 @@ def cross_entropy(input, target, weight=None, reduction='mean', ignore_index=255
     if target.dim() == 4:
         target = torch.squeeze(target, dim=1)
     if input.shape[-1] != target.shape[-1]:
-        input = F.interpolate(input, size=target.shape[1:], mode='bilinear', align_corners=True)
+        input = F.interpolate(
+            input, size=target.shape[1:], mode="bilinear", align_corners=True
+        )
 
-    return F.cross_entropy(input=input, target=target, weight=weight,
-                           ignore_index=ignore_index, reduction=reduction)
+    return F.cross_entropy(
+        input=input,
+        target=target,
+        weight=weight,
+        ignore_index=ignore_index,
+        reduction=reduction,
+    )
 
 
 def balanced_cross_entropy(input, target, weight=None, ignore_index=255):
@@ -264,7 +282,9 @@ def balanced_cross_entropy(input, target, weight=None, ignore_index=255):
     if target.dim() == 4:
         target = torch.squeeze(target, dim=1)
     if input.shape[-1] != target.shape[-1]:
-        input = F.interpolate(input, size=target.shape[1:], mode='bilinear', align_corners=True)
+        input = F.interpolate(
+            input, size=target.shape[1:], mode="bilinear", align_corners=True
+        )
 
     # print('target.sum',target.sum())
     pos = (target == 1).float()
@@ -280,8 +300,12 @@ def balanced_cross_entropy(input, target, weight=None, ignore_index=255):
 
     # print('target.sum',target.sum())
 
-    loss_pos = cross_entropy(input, target_pos, weight=weight, reduction='sum', ignore_index=ignore_index)
-    loss_neg = cross_entropy(input, target_neg, weight=weight, reduction='sum', ignore_index=ignore_index)
+    loss_pos = cross_entropy(
+        input, target_pos, weight=weight, reduction="sum", ignore_index=ignore_index
+    )
+    loss_neg = cross_entropy(
+        input, target_neg, weight=weight, reduction="sum", ignore_index=ignore_index
+    )
     # print(loss_neg, loss_pos)
     loss = 0.5 * loss_pos / pos_num + 0.5 * loss_neg / neg_num
     # loss = (loss_pos + loss_neg)/ (pos_num+neg_num)
@@ -289,15 +313,17 @@ def balanced_cross_entropy(input, target, weight=None, ignore_index=255):
 
 
 def get_scheduler(optimizer, opt):
-    """Return a learning rate scheduler
-    """
-    if opt.lr_policy == 'linear':
+    """Return a learning rate scheduler"""
+    if opt.lr_policy == "linear":
+
         def lambda_rule(epoch):
-            lr_l = 1.0 - max(0, epoch + opt.epoch_count - opt.niter) / float(opt.niter_decay + 1)
+            lr_l = 1.0 - max(0, epoch + opt.epoch_count - opt.niter) / float(
+                opt.niter_decay + 1
+            )
             return lr_l
 
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-    elif opt.lr_policy == 'poly':
+    elif opt.lr_policy == "poly":
         max_step = opt.niter + opt.niter_decay
         power = 0.9
 
@@ -307,10 +333,14 @@ def get_scheduler(optimizer, opt):
             return lr_l
 
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-    elif opt.lr_policy == 'step':
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=opt.lr_decay_iters, gamma=0.1)
+    elif opt.lr_policy == "step":
+        scheduler = lr_scheduler.StepLR(
+            optimizer, step_size=opt.lr_decay_iters, gamma=0.1
+        )
     else:
-        return NotImplementedError('learning rate policy [%s] is not implemented', opt.lr_policy)
+        return NotImplementedError(
+            "learning rate policy [%s] is not implemented", opt.lr_policy
+        )
     return scheduler
 
 
@@ -330,7 +360,7 @@ def mul_cls_acc(preds, targets, topk=(1,)):
         # print('pred: ', pred)
         # print('targets: ', targets)
         correct = torch.zeros([bs, maxk]).long()  # 记录预测正确label数量
-        if preds.device != torch.device(type='cpu'):
+        if preds.device != torch.device(type="cpu"):
             correct = correct.cuda()
         for i in range(C):
             label = i + 1
@@ -373,7 +403,6 @@ def cls_accuracy(output, target, topk=(1,)):
 
 
 class PolyOptimizer(torch.optim.SGD):
-
     def __init__(self, params, lr, weight_decay, max_step, init_step=0, momentum=0.9):
         super().__init__(params, lr, weight_decay)
 
@@ -382,15 +411,14 @@ class PolyOptimizer(torch.optim.SGD):
         self.max_step = max_step
         self.momentum = momentum
 
-        self.__initial_lr = [group['lr'] for group in self.param_groups]
+        self.__initial_lr = [group["lr"] for group in self.param_groups]
 
     def step(self, closure=None):
-
         if self.global_step < self.max_step:
             lr_mult = (1 - self.global_step / self.max_step) ** self.momentum
 
             for i in range(len(self.param_groups)):
-                self.param_groups[i]['lr'] = self.__initial_lr[i] * lr_mult
+                self.param_groups[i]["lr"] = self.__initial_lr[i] * lr_mult
 
         super().step(closure)
 
@@ -405,15 +433,14 @@ class PolyAdamOptimizer(torch.optim.Adam):
         self.max_step = max_step
         self.momentum = momentum
 
-        self.__initial_lr = [group['lr'] for group in self.param_groups]
+        self.__initial_lr = [group["lr"] for group in self.param_groups]
 
     def step(self, closure=None):
-
         if self.global_step < self.max_step:
             lr_mult = (1 - self.global_step / self.max_step) ** self.momentum
 
             for i in range(len(self.param_groups)):
-                self.param_groups[i]['lr'] = self.__initial_lr[i] * lr_mult
+                self.param_groups[i]["lr"] = self.__initial_lr[i] * lr_mult
 
         super().step(closure)
         self.global_step += 1
@@ -446,9 +473,17 @@ class PolyAdamOptimizer(torch.optim.Adam):
 #         super().step(closure)
 #         self.global_step += 1
 
-class SGDROptimizer(torch.optim.SGD):
 
-    def __init__(self, params, steps_per_epoch, lr=0, weight_decay=0, epoch_start=1, restart_mult=2):
+class SGDROptimizer(torch.optim.SGD):
+    def __init__(
+        self,
+        params,
+        steps_per_epoch,
+        lr=0,
+        weight_decay=0,
+        epoch_start=1,
+        restart_mult=2,
+    ):
         super().__init__(params, lr, weight_decay)
 
         self.global_step = 0
@@ -458,19 +493,22 @@ class SGDROptimizer(torch.optim.SGD):
         self.max_step = steps_per_epoch * epoch_start
         self.restart_mult = restart_mult
 
-        self.__initial_lr = [group['lr'] for group in self.param_groups]
+        self.__initial_lr = [group["lr"] for group in self.param_groups]
 
     def step(self, closure=None):
-
         if self.local_step >= self.max_step:
             self.local_step = 0
             self.max_step *= self.restart_mult
             self.total_restart += 1
 
-        lr_mult = (1 + math.cos(math.pi * self.local_step / self.max_step)) / 2 / (self.total_restart + 1)
+        lr_mult = (
+            (1 + math.cos(math.pi * self.local_step / self.max_step))
+            / 2
+            / (self.total_restart + 1)
+        )
 
         for i in range(len(self.param_groups)):
-            self.param_groups[i]['lr'] = self.__initial_lr[i] * lr_mult
+            self.param_groups[i]["lr"] = self.__initial_lr[i] * lr_mult
 
         super().step(closure)
 
@@ -479,7 +517,9 @@ class SGDROptimizer(torch.optim.SGD):
 
 
 def split_dataset(dataset, n_splits):
-    return [Subset(dataset, np.arange(i, len(dataset), n_splits)) for i in range(n_splits)]
+    return [
+        Subset(dataset, np.arange(i, len(dataset), n_splits)) for i in range(n_splits)
+    ]
 
 
 def gap2d(x, keepdims=False):
@@ -517,7 +557,7 @@ def decode_seg(label_mask, toTensor=False):
 
 
 def tensor2im(input_image, imtype=np.uint8, normalize=True):
-    """"Converts a Tensor array into a numpy image array.
+    """ "Converts a Tensor array into a numpy image array.
     Parameters:
         input_image (tensor) --  the input image tensor array
         imtype (type)        --  the desired type of the converted numpy array
@@ -527,13 +567,17 @@ def tensor2im(input_image, imtype=np.uint8, normalize=True):
             image_tensor = input_image.data
         else:
             return input_image
-        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy array
+        image_numpy = (
+            image_tensor[0].cpu().float().numpy()
+        )  # convert it into a numpy array
         # if image_numpy.shape[0] == 1:  # grayscale to RGB
         #     image_numpy = np.tile(image_numpy, (3, 1, 1))
         if image_numpy.shape[0] == 3:  # if RGB
             image_numpy = np.transpose(image_numpy, (1, 2, 0))
             if normalize:
-                image_numpy = (image_numpy + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
+                image_numpy = (
+                    (image_numpy + 1) / 2.0 * 255.0
+                )  # post-processing: tranpose and scaling
     else:  # if it is a numpy array, do nothing
         image_numpy = input_image
     return image_numpy.astype(imtype)
@@ -546,7 +590,9 @@ def tensor2np(input_image, if_normalize=True):
     """
     if isinstance(input_image, torch.Tensor):  # get the data from a variable
         image_tensor = input_image.data
-        image_numpy = image_tensor.cpu().float().numpy()  # convert it into a numpy array
+        image_numpy = (
+            image_tensor.cpu().float().numpy()
+        )  # convert it into a numpy array
 
     else:
         image_numpy = input_image
@@ -559,10 +605,11 @@ def tensor2np(input_image, if_normalize=True):
         if C == 1:
             image_numpy = image_numpy[:, :, 0]
         if if_normalize and C == 3:
-            image_numpy = (image_numpy + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
+            image_numpy = (
+                (image_numpy + 1) / 2.0 * 255.0
+            )  # post-processing: tranpose and scaling
             #  add to prevent extreme noises in visual images
             image_numpy[image_numpy < 0] = 0
             image_numpy[image_numpy > 255] = 255
             image_numpy = image_numpy.astype(np.uint8)
     return image_numpy
-

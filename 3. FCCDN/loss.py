@@ -3,13 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class dice_loss(nn.Module):
     def __init__(self, batch=True):
         super(dice_loss, self).__init__()
         self.batch = batch
-        
+
     def soft_dice_coeff(self, y_true, y_pred):
         smooth = 0.00001
         if self.batch:
@@ -20,13 +21,13 @@ class dice_loss(nn.Module):
             i = y_true.sum(1).sum(1).sum(1)
             j = y_pred.sum(1).sum(1).sum(1)
             intersection = (y_true * y_pred).sum(1).sum(1).sum(1)
-        score = (2. * intersection + smooth) / (i + j + smooth)
+        score = (2.0 * intersection + smooth) / (i + j + smooth)
         return score.mean()
 
     def soft_dice_loss(self, y_true, y_pred):
         loss = 1 - self.soft_dice_coeff(y_true, y_pred)
         return loss
-        
+
     def __call__(self, y_true, y_pred):
         y_true = y_true.to(device)
         y_pred = y_pred.to(device)
@@ -34,13 +35,14 @@ class dice_loss(nn.Module):
 
 
 class MultiClass_DiceLoss(nn.Module):
-    def __init__(self, 
-                weight: torch.Tensor, 
-                batch: Optional[bool] = True, 
-                ignore_index: Optional[int] = -1,
-                do_sigmoid: Optional[bool] = False,
-                **kwargs,
-                )->torch.Tensor:
+    def __init__(
+        self,
+        weight: torch.Tensor,
+        batch: Optional[bool] = True,
+        ignore_index: Optional[int] = -1,
+        do_sigmoid: Optional[bool] = False,
+        **kwargs,
+    ) -> torch.Tensor:
         super(MultiClass_DiceLoss, self).__init__()
         self.ignore_index = ignore_index
         self.weight = weight
@@ -52,7 +54,7 @@ class MultiClass_DiceLoss(nn.Module):
         y_pred = y_pred.to(device)
         if self.do_sigmoid:
             y_pred = torch.softmax(y_pred, dim=1)
-        y_true = F.one_hot(y_true.long(), y_pred.shape[1]).permute(0,3,1,2)
+        y_true = F.one_hot(y_true.long(), y_pred.shape[1]).permute(0, 3, 1, 2)
         total_loss = 0.0
         tmp_i = 0.0
         for i in range(y_pred.shape[1]):
@@ -65,6 +67,7 @@ class MultiClass_DiceLoss(nn.Module):
 
 class dice_bce_loss(nn.Module):
     """Binary"""
+
     def __init__(self):
         super(dice_bce_loss, self).__init__()
         self.bce_loss = nn.BCELoss()
@@ -87,7 +90,8 @@ class dice_bce_loss(nn.Module):
 
 class mc_dice_bce_loss(nn.Module):
     """multi-class"""
-    def __init__(self, weight, do_sigmoid = True):
+
+    def __init__(self, weight, do_sigmoid=True):
         super(mc_dice_bce_loss, self).__init__()
         self.ce_loss = nn.CrossEntropyLoss(weight)
         self.dice = MultiClass_DiceLoss(weight, do_sigmoid)
@@ -157,7 +161,6 @@ def FCCDN_loss_BCD(scores, labels):
     return loss
 
 
-
 def FCCDN_loss_SCD(scores, labels):
     scores = scores.to(device)
     labels = labels.to(device)
@@ -169,11 +172,10 @@ def FCCDN_loss_SCD(scores, labels):
     pred_seg_pre_unchange = torch.argmax(scores[1], axis=1)
     pred_seg_post_unchange = torch.argmax(scores[2], axis=1)
 
-    pred_seg_pre_unchange[labels[0][:,0,: :]==1] = 0
-    pred_seg_post_unchange[labels[0][:,0,: :]==1] = 0
+    pred_seg_pre_unchange[labels[0][:, 0, ::] == 1] = 0
+    pred_seg_post_unchange[labels[0][:, 0, ::] == 1] = 0
 
     aux_loss = 0.2 * criterion(scores[1], pred_seg_post_unchange)
     aux_loss += 0.2 * criterion(scores[2], pred_seg_pre_unchange)
     aux_loss += 0.2 * criterion(scores[1], labels[1])
     aux_loss += 0.2 * criterion(scores[2], labels[2])
-

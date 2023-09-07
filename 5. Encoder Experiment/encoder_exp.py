@@ -12,21 +12,22 @@ from dataloader import val_dataset
 # write list to binary file
 def write_list(a_list, filename):
     # store list in binary file so 'wb' mode
-    with open(filename, 'wb') as fp:
+    with open(filename, "wb") as fp:
         pickle.dump(a_list, fp)
-        print('Done writing list into a binary file')
+        print("Done writing list into a binary file")
+
 
 # Read list to memory
 def read_list(filename):
     # for reading also binary mode is important
-    with open(filename, 'rb') as fp:
+    with open(filename, "rb") as fp:
         n_list = pickle.load(fp)
         return n_list
 
 
-def split_image_label (imgA :torch.Tensor, label :torch.Tensor):
+def split_image_label(imgA: torch.Tensor, label: torch.Tensor):
     """
-    Input: 
+    Input:
         imgA  -> torch.Tensor , 3x256x256\n
         label -> torch.Tensor , 1x256x256
     Output:
@@ -48,17 +49,21 @@ def split_image_label (imgA :torch.Tensor, label :torch.Tensor):
 
 
 # MODEL BEING EXPERIMENTED WITH
-MODEL_NAME  = "a2net" # OPTIONS: "a2net" "fccdn" 
+MODEL_NAME = "a2net"  # OPTIONS: "a2net" "fccdn"
 
 
 # Data to be collected during the loop
-green_data = []     # Green means that there was no change between the 2 images
+green_data = []  # Green means that there was no change between the 2 images
 num_green_data = 0
-blue_data = []      # Blue means that images were striped of the part that had the change and then inferenced
+blue_data = (
+    []
+)  # Blue means that images were striped of the part that had the change and then inferenced
 num_blue_data = 0
-red_data = []       # Red means that there was change between the 2 images
+red_data = []  # Red means that there was change between the 2 images
 num_red_data = 0
-yellow_data = []    # Yellow means that images were striped of the part which had no change and then inferenced
+yellow_data = (
+    []
+)  # Yellow means that images were striped of the part which had no change and then inferenced
 num_yellow_data = 0
 
 
@@ -74,7 +79,9 @@ for i in range(len(val_dataset)):
     label = sample["label"]
 
     # Encodings for green and red data
-    enc1, enc2 = model_enc(imgA.reshape((1,3,256,256)), imgB.reshape((1,3,256,256)))
+    enc1, enc2 = model_enc(
+        imgA.reshape((1, 3, 256, 256)), imgB.reshape((1, 3, 256, 256))
+    )
     if label.max() > 0:
         # Red Data
         num_red_data += 1
@@ -84,13 +91,16 @@ for i in range(len(val_dataset)):
         num_green_data += 1
         green_data.append(scalar_dist(enc1, enc2))
 
-
     # Encodings for blue and yellow data
     imgA_1, imgA_2 = split_image_label(imgA, label)
     imgB_1, imgB_2 = split_image_label(imgB, label)
 
-    enc1_2 , enc2_2 = model_enc(imgA_1.reshape((1,3,256,256)), imgB_1.reshape((1,3,256,256))) # Encodings for change part of images -> Yellow Data encodings
-    enc1_3 , enc2_3 = model_enc(imgA_2.reshape((1,3,256,256)), imgB_2.reshape((1,3,256,256))) # Encodings for no-change part of images -> Blue Data encodings
+    enc1_2, enc2_2 = model_enc(
+        imgA_1.reshape((1, 3, 256, 256)), imgB_1.reshape((1, 3, 256, 256))
+    )  # Encodings for change part of images -> Yellow Data encodings
+    enc1_3, enc2_3 = model_enc(
+        imgA_2.reshape((1, 3, 256, 256)), imgB_2.reshape((1, 3, 256, 256))
+    )  # Encodings for no-change part of images -> Blue Data encodings
 
     # Blue Data
     num_blue_data += 1
@@ -100,7 +110,7 @@ for i in range(len(val_dataset)):
     num_yellow_data += 1
     yellow_data.append(scalar_dist(enc1_2, enc2_2))
 
-write_list(green_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-green_data.txt")
-write_list(blue_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-blue_data.txt")
-write_list(red_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-red_data.txt")
-write_list(yellow_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME+"-yellow_data.txt")
+write_list(green_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME + "-green_data.txt")
+write_list(blue_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME + "-blue_data.txt")
+write_list(red_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME + "-red_data.txt")
+write_list(yellow_data, "./data/" + MODEL_NAME + "/" + MODEL_NAME + "-yellow_data.txt")

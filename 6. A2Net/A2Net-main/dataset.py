@@ -4,19 +4,27 @@ import torch.utils.data
 
 
 class Dataset(torch.utils.data.Dataset):
-    '''
+    """
     Class to load the dataset
-    '''
+    """
 
-    def __init__(self, dataset, file_root='data/', transform=None):
+    def __init__(self, dataset, file_root="data/", transform=None):
         """
         dataset: dataset name, e.g. NJU2K_NLPR_train
         file_root: root of data_path, e.g. ./data/
         """
-        self.file_list = open(file_root + '/' + dataset + '/list/' + dataset + '.txt').read().splitlines()
-        self.pre_images = [file_root + '/' + dataset + '/A/' + x for x in self.file_list]
-        self.post_images = [file_root + '/' + dataset + '/B/' + x for x in self.file_list]
-        self.gts = [file_root + '/' + dataset + '/label/' + x for x in self.file_list]
+        self.file_list = (
+            open(file_root + "/" + dataset + "/list/" + dataset + ".txt")
+            .read()
+            .splitlines()
+        )
+        self.pre_images = [
+            file_root + "/" + dataset + "/A/" + x for x in self.file_list
+        ]
+        self.post_images = [
+            file_root + "/" + dataset + "/B/" + x for x in self.file_list
+        ]
+        self.gts = [file_root + "/" + dataset + "/label/" + x for x in self.file_list]
         self.transform = transform
 
     def __len__(self):

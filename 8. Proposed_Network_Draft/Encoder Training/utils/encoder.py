@@ -8,14 +8,15 @@ from typing import Iterator
 import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def rdpnet_model_enc ():
+def rdpnet_model_enc():
     pass
 
-def fccdn_model_enc ():
-    
+
+def fccdn_model_enc():
     # from FCCDN_network.GenerateNet import GenerateNet
 
     # class Config():
@@ -29,11 +30,12 @@ def fccdn_model_enc ():
     # model = GenerateNet(cfg)
     # checkpoint = torch.load("./FCCDN_network/FCCDN_test_LEVIR_CD.pth", map_location=torch.device('cpu'))
     # model.load_state_dict(checkpoint, strict=False)
-    
+
     # return model
     pass
 
-def a2net_model_enc ():
+
+def a2net_model_enc():
     # from A2_network.model import BaseNet
     # model = BaseNet(3,1)
     # checkpoint = torch.load("./A2_network/best_model.pth", map_location=torch.device('cpu'))
@@ -42,11 +44,14 @@ def a2net_model_enc ():
     # return model
     pass
 
-def swin_transformer_model_enc ():
+
+def swin_transformer_model_enc():
     from utils.swin_transformer import swin_t_encoder
+
     return swin_t_encoder()
 
-class Encoder (nn.Module):
+
+class Encoder(nn.Module):
     """
     Input:
         imgA -> torch.Tensor , [B,3,256,256] , No augmentation
@@ -55,8 +60,8 @@ class Encoder (nn.Module):
         enc1 -> Encoding for imgA , torch.Tensor, Flattened Vector
         enc2 -> Encoding for imgB , torch.Tensor, Flattened Vector
     """
-    def __init__ (self, model_name :str) -> None:
 
+    def __init__(self, model_name: str) -> None:
         super().__init__()
 
         if model_name.lower() == "swin":
@@ -68,8 +73,7 @@ class Encoder (nn.Module):
         # if model_name.lower() == "a2net":
         #     self.model = a2net_model_enc().requires_grad_()
 
-    def forward (self, imgA :torch.Tensor, imgB :torch.Tensor) -> tuple[torch.tensor]:
-
+    def forward(self, imgA: torch.Tensor, imgB: torch.Tensor) -> tuple[torch.tensor]:
         _, _, _, enc1 = self.model(imgA)
         _, _, _, enc2 = self.model(imgB)
 
@@ -77,4 +81,3 @@ class Encoder (nn.Module):
         enc2 = torch.flatten(enc2, 1)
 
         return enc1, enc2
-    

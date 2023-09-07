@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
+
 bn_mom = 0.0003
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 """Implemention of dense fusion module"""
+
 
 class densecat_cat_add(nn.Module):
     def __init__(self, in_chn, out_chn):
@@ -32,11 +34,11 @@ class densecat_cat_add(nn.Module):
         y = y.to(device)
         x1 = self.conv1(x)
         x2 = self.conv2(x1)
-        x3 = self.conv3(x2+x1)
+        x3 = self.conv3(x2 + x1)
 
         y1 = self.conv1(y)
         y2 = self.conv2(y1)
-        y3 = self.conv3(y2+y1)
+        y3 = self.conv3(y2 + y1)
 
         return self.conv_out(x1 + x2 + x3 + y1 + y2 + y3)
 
@@ -63,17 +65,16 @@ class densecat_cat_diff(nn.Module):
         )
 
     def forward(self, x, y):
-
         x = x.to(device)
         y = y.to(device)
 
         x1 = self.conv1(x)
         x2 = self.conv2(x1)
-        x3 = self.conv3(x2+x1)
+        x3 = self.conv3(x2 + x1)
 
         y1 = self.conv1(y)
         y2 = self.conv2(y1)
-        y3 = self.conv3(y2+y1)
+        y3 = self.conv3(y2 + y1)
         out = self.conv_out(torch.abs(x1 + x2 + x3 - y1 - y2 - y3))
         return out
 
@@ -83,11 +84,11 @@ class DF_Module(nn.Module):
         super(DF_Module, self).__init__()
         if reduction:
             self.reduction = torch.nn.Sequential(
-                torch.nn.Conv2d(dim_in, dim_in//2, kernel_size=1, padding=0),
-                nn.BatchNorm2d(dim_in//2, momentum=bn_mom),
+                torch.nn.Conv2d(dim_in, dim_in // 2, kernel_size=1, padding=0),
+                nn.BatchNorm2d(dim_in // 2, momentum=bn_mom),
                 torch.nn.ReLU(inplace=True),
             )
-            dim_in = dim_in//2
+            dim_in = dim_in // 2
         else:
             self.reduction = None
         self.cat1 = densecat_cat_add(dim_in, dim_out)
@@ -99,7 +100,6 @@ class DF_Module(nn.Module):
         )
 
     def forward(self, x1, x2):
-
         x1 = x1.to(device)
         x2 = x2.to(device)
 

@@ -22,8 +22,8 @@ from torch.autograd import Variable
 #     img[img < 0.7] = 0
 #     sum_img = img.sum()
 #     num_change_pixesl_imgs += sum_img
-#     num_no_change_pixel_imgs += (256*256) - sum_img    
-    
+#     num_no_change_pixel_imgs += (256*256) - sum_img
+
 
 # f = open("training_imgs_info.txt", "a")
 # f.write("Number of pixels in images with change = {}\nNumber of pixels in images with no change = {}".format(
@@ -32,63 +32,66 @@ from torch.autograd import Variable
 # f.close()
 
 
-class WeightedBCE (nn.Module):
+class WeightedBCE(nn.Module):
     def __init__(self, pos_weight) -> None:
         super().__init__()
         self.pos_weight = pos_weight
+
 
 class TripletLoss(nn.Module):
     def __init__(self, margin=1.0):
         super(TripletLoss, self).__init__()
         self.margin = margin
-        
+
     def calc_euclidean(self, x1, x2):
         return (x1 - x2).pow(2).sum(1)
-    
-    def forward(self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor) -> torch.Tensor:
+
+    def forward(
+        self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor
+    ) -> torch.Tensor:
         distance_positive = self.calc_euclidean(anchor, positive)
         distance_negative = self.calc_euclidean(anchor, negative)
         losses = torch.relu(distance_positive - distance_negative + self.margin)
 
         return losses.mean()
 
-class CustomBinFocalLoss (nn.Module):
+
+class CustomBinFocalLoss(nn.Module):
     """
     Computes Focal Loss for Binary classification. This takes a batch of data and computes loss for it.
-    
+
     Arguments:
-        alpha : float, default = 0.8, The more the alpha the more the contribution of 1s in the loss. 
+        alpha : float, default = 0.8, The more the alpha the more the contribution of 1s in the loss.
                 So class 1 will have alpha times less impact in the loss. Should be equal to (1 - (0's pixels / 1's pixels))
-        
-        gamma : float, default = 2, Influences how much does the easy classifications contribute... 
+
+        gamma : float, default = 2, Influences how much does the easy classifications contribute...
                 Predictions which are already close to their expected value...
     """
-    def __init__(self, alpha = 0.8, gamma = 2) -> None:
+
+    def __init__(self, alpha=0.8, gamma=2) -> None:
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.cross_entropy = nn.BCELoss(reduction="none")
 
-    def __call__(self, pred :torch.Tensor, target :torch.Tensor) -> torch.Tensor:
-
+    def __call__(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         # ce = torch.where( target==1 , torch.log(pred) , torch.log(1-pred) )
-        cross_entropy = self.cross_entropy( pred, target)
+        cross_entropy = self.cross_entropy(pred, target)
 
-        pt = torch.where( target==1 , self.alpha*(1-pred) , (1-self.alpha)*pred )
+        pt = torch.where(target == 1, self.alpha * (1 - pred), (1 - self.alpha) * pred)
         pt = pt**self.gamma
-        
+
         loss = pt * cross_entropy
-        # loss = torch.mean(loss)   
-        loss = torch.sum(loss)   
+        # loss = torch.mean(loss)
+        loss = torch.sum(loss)
         return loss
-    
-class DiceLoss (nn.Module):
-    
+
+
+class DiceLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-
-    def forward (self, logits, true, eps=1e-7):
+    def forward(self, logits, true, eps=1e-7):
         """Computes the Sørensen–Dice loss.
 
         Note that PyTorch optimizers minimize a loss. In this
@@ -122,6 +125,5 @@ class DiceLoss (nn.Module):
         dims = (0,) + tuple(range(2, true.ndimension()))
         intersection = torch.sum(probas * true_1_hot, dims)
         cardinality = torch.sum(probas + true_1_hot, dims)
-        dice_loss = (2. * intersection / (cardinality + eps)).mean()
-        return (1 - dice_loss)
-    
+        dice_loss = (2.0 * intersection / (cardinality + eps)).mean()
+        return 1 - dice_loss

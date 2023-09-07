@@ -8,8 +8,11 @@ import cv2
 import numpy as np
 
 from networks.FCCDN import FCCDN
+
 print("**********warning**********")
-print("We have updated the model by replacing the upsample mode from \'bilinear\' to \'nearest\'. ")
+print(
+    "We have updated the model by replacing the upsample mode from 'bilinear' to 'nearest'. "
+)
 print("Please update to the latest code.")
 
 test_in_path = "./LEVIR_CD/raw/test/"
@@ -37,8 +40,8 @@ for file in files:
 model = FCCDN(num_band=3, use_se=True)
 pretrained_dict = torch.load(pretrained_weights, map_location="cpu")
 module_model_state_dict = {}
-for item, value in pretrained_dict['model_state_dict'].items():
-    if item[0:7] == 'module.':
+for item, value in pretrained_dict["model_state_dict"].items():
+    if item[0:7] == "module.":
         item = item[7:]
     module_model_state_dict[item] = value
 model.load_state_dict(module_model_state_dict, strict=True)
@@ -53,14 +56,17 @@ with tqdm(total=len(basename_list)) as pbar:
         for basename in basename_list:
             pre = cv2.imread(os.path.join(test_in_path, "A", basename))
             post = cv2.imread(os.path.join(test_in_path, "B", basename))
-            pre = normalize(torch.Tensor(pre.transpose(2,0,1)/255))[None]
-            post = normalize(torch.Tensor(post.transpose(2,0,1)/255))[None]
+            pre = normalize(torch.Tensor(pre.transpose(2, 0, 1) / 255))[None]
+            post = normalize(torch.Tensor(post.transpose(2, 0, 1) / 255))[None]
             pred = model([pre, post])
             # change_mask = torch.sigmoid(pred[0]).cpu().numpy()[0,0]
             out = torch.round(torch.sigmoid(pred[0])).cpu().numpy()
             seg1 = torch.round(torch.sigmoid(pred[1])).cpu().numpy()
             seg2 = torch.round(torch.sigmoid(pred[2])).cpu().numpy()
-            cv2.imwrite(os.path.join(test_out_path, "change", basename), out[0,0].astype(np.uint8))
-            cv2.imwrite(os.path.join(test_out_path, "seg1", basename), seg1[0,0]*255)
-            cv2.imwrite(os.path.join(test_out_path, "seg2", basename), seg2[0,0]*255)
+            cv2.imwrite(
+                os.path.join(test_out_path, "change", basename),
+                out[0, 0].astype(np.uint8),
+            )
+            cv2.imwrite(os.path.join(test_out_path, "seg1", basename), seg1[0, 0] * 255)
+            cv2.imwrite(os.path.join(test_out_path, "seg2", basename), seg2[0, 0] * 255)
             pbar.update()

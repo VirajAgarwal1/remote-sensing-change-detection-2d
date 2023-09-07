@@ -48,7 +48,6 @@ class up_sampling(nn.Module):
         self.gelu = nn.GELU()
 
     def forward(self, x):
-
         x = self.layer1(x)
 
         x = self.patchup(x)

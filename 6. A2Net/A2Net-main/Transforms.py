@@ -11,21 +11,21 @@ class Scale(object):
     """
 
     def __init__(self, wi, he):
-        '''
+        """
         :param wi: width after resizing
         :param he: height after reszing
-        '''
+        """
         self.w = wi
         self.h = he
 
     # modified from torchvision to add support for max size
 
     def __call__(self, img, label):
-        '''
+        """
         :param img: RGB image
         :param label: semantic label image
         :return: resized images
-        '''
+        """
         # bilinear interpolation for RGB image
         img = cv2.resize(img, (self.w, self.h))
         # nearest neighbour interpolation for label image
@@ -87,9 +87,9 @@ class RandomCropResize(object):
     """
 
     def __init__(self, crop_area):
-        '''
+        """
         :param crop_area: area to be cropped (this is the max value and we select between 0 and crop area
-        '''
+        """
         self.cw = crop_area
         self.ch = crop_area
 
@@ -99,8 +99,8 @@ class RandomCropResize(object):
             x1 = random.randint(0, self.ch)
             y1 = random.randint(0, self.cw)
 
-            img_crop = img[y1:h - y1, x1:w - x1]
-            label_crop = label[y1:h - y1, x1:w - x1]
+            img_crop = img[y1 : h - y1, x1 : w - x1]
+            label_crop = label[y1 : h - y1, x1 : w - x1]
 
             img_crop = cv2.resize(img_crop, (w, h))
             label_crop = cv2.resize(label_crop, (w, h), interpolation=cv2.INTER_NEAREST)
@@ -117,11 +117,11 @@ class RandomFlip(object):
 
     def __call__(self, image, label):
         if random.random() < 0.5:
-                image = cv2.flip(image, 0)  # horizontal flip
-                label = cv2.flip(label, 0)  # horizontal flip
+            image = cv2.flip(image, 0)  # horizontal flip
+            label = cv2.flip(label, 0)  # horizontal flip
         if random.random() < 0.5:
-                image = cv2.flip(image, 1)  # veritcal flip
-                label = cv2.flip(label, 1)  # veritcal flip
+            image = cv2.flip(image, 1)  # veritcal flip
+            label = cv2.flip(label, 1)  # veritcal flip
         return [image, label]
 
 
@@ -146,10 +146,10 @@ class Normalize(object):
     """
 
     def __init__(self, mean, std):
-        '''
+        """
         :param mean: global mean computed from dataset
         :param std: global std computed from dataset
-        '''
+        """
         self.mean = mean
         self.std = std
         self.depth_mean = [0.5]
@@ -169,10 +169,10 @@ class Normalize(object):
 
 class GaussianNoise(object):
     def __init__(self, std=0.05):
-        '''
+        """
         :param mean: global mean computed from dataset
         :param std: global std computed from dataset
-        '''
+        """
         self.std = std
 
     def __call__(self, image, label):
@@ -182,23 +182,28 @@ class GaussianNoise(object):
 
 
 class ToTensor(object):
-    '''
+    """
     This class converts the data to tensor so that it can be processed by PyTorch
-    '''
+    """
 
     def __init__(self, scale=1):
-        '''
+        """
         :param scale: set this parameter according to the output scale
-        '''
+        """
         self.scale = scale
 
     def __call__(self, image, label):
         if self.scale != 1:
             h, w = label.shape[:2]
             image = cv2.resize(image, (int(w), int(h)))
-            label = cv2.resize(label, (int(w / self.scale), int(h / self.scale)), \
-                               interpolation=cv2.INTER_NEAREST)
-        image = image[:, :, ::-1].copy()  # .copy() is to solve "torch does not support negative index"
+            label = cv2.resize(
+                label,
+                (int(w / self.scale), int(h / self.scale)),
+                interpolation=cv2.INTER_NEAREST,
+            )
+        image = image[
+            :, :, ::-1
+        ].copy()  # .copy() is to solve "torch does not support negative index"
         image = image.transpose((2, 0, 1))
         image_tensor = torch.from_numpy(image)
         # TODO: here, we add unsqueeze to satisfy the condition that

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_ch, out_ch,residual=True):
+    def __init__(self, in_ch, out_ch, residual=True):
         super(DoubleConv, self).__init__()
         self.residual = residual
         self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
@@ -16,41 +16,43 @@ class DoubleConv(nn.Module):
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.relu2 = nn.ReLU(inplace=True)
 
-
     def forward(self, input):
         x0 = self.conv1(input)
         x0 = self.bn1(x0)
-        x0=self.relu1(x0)
+        x0 = self.relu1(x0)
         x = self.conv2(x0)
         x = self.bn2(x)
         x = self.relu2(x)
         if self.residual:
-            x=x+x0
+            x = x + x0
         return x
 
+
 class SAU_spi(nn.Module):
-    def __init__(self, F_g, F_l, F_int):# F_g:high_level->W_g, F_l:low_level->W_x, F_int=F_l//2->psi
+    def __init__(
+        self, F_g, F_l, F_int
+    ):  # F_g:high_level->W_g, F_l:low_level->W_x, F_int=F_l//2->psi
         super(SAU_spi, self).__init__()
         self.W_g = nn.Sequential(
             nn.Conv2d(F_g, F_int, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.BatchNorm2d(F_int)
+            nn.BatchNorm2d(F_int),
         )
 
         self.W_x = nn.Sequential(
             nn.Conv2d(F_l, F_int, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.BatchNorm2d(F_int)
+            nn.BatchNorm2d(F_int),
         )
 
         self.psi = nn.Sequential(
             nn.Conv2d(F_int, 1, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, g, x):#g:high_level    x:low_level
-        g = F.interpolate(g,x.shape[2:])
+    def forward(self, g, x):  # g:high_level    x:low_level
+        g = F.interpolate(g, x.shape[2:])
         # 下采样的gating signal 卷积
         g1 = self.W_g(g)
         # 上采样的 l 卷积
@@ -62,31 +64,40 @@ class SAU_spi(nn.Module):
         # 返回加权的 x
         return psi
 
+
 class SAU_GAU_conc_residual(nn.Module):
-    def __init__(self, channels_high, channels_low, upsample=True,residual=True):
+    def __init__(self, channels_high, channels_low, upsample=True, residual=True):
         super(SAU_GAU_conc_residual, self).__init__()
         # F_g:high_level->W_g, F_l:low_level->W_x, F_int=F_l//2->psi
         # spatial attention
-        self.SPI = SAU_spi(channels_high, channels_low,channels_low//2)
+        self.SPI = SAU_spi(channels_high, channels_low, channels_low // 2)
         # Global Attention Upsample
         # channel attention
         self.upsample = upsample
-        self.conv3x3 = nn.Conv2d(channels_low, channels_low, kernel_size=3, padding=1, bias=False)
+        self.conv3x3 = nn.Conv2d(
+            channels_low, channels_low, kernel_size=3, padding=1, bias=False
+        )
         self.bn_low = nn.BatchNorm2d(channels_low)
 
-        self.conv1x1 = nn.Conv2d(channels_high, channels_low, kernel_size=1, padding=0, bias=False)
+        self.conv1x1 = nn.Conv2d(
+            channels_high, channels_low, kernel_size=1, padding=0, bias=False
+        )
         self.bn_high = nn.BatchNorm2d(channels_low)
 
         if upsample:
-            self.conv_upsample = DoubleConv(channels_high+channels_low, channels_low, residual=residual)
+            self.conv_upsample = DoubleConv(
+                channels_high + channels_low, channels_low, residual=residual
+            )
             # self.conv_upsample = nn.Conv2d(channels_high+channels_low, channels_low, 3, padding=1)
             self.bn_upsample = nn.BatchNorm2d(channels_low)
         else:
-            self.conv_reduction = nn.Conv2d(channels_high, channels_low, kernel_size=1, padding=0, bias=False)
+            self.conv_reduction = nn.Conv2d(
+                channels_high, channels_low, kernel_size=1, padding=0, bias=False
+            )
             self.bn_reduction = nn.BatchNorm2d(channels_low)
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, fms_high, fms_low, fm_mask=None):#g:high_level    x:low_level
+    def forward(self, fms_high, fms_low, fm_mask=None):  # g:high_level    x:low_level
         """
         Use the high level features with abundant catagory information to weight the low level features with pixel
         localization information. In the meantime, we further use mask feature maps with catagory-specific information
@@ -96,11 +107,13 @@ class SAU_GAU_conc_residual(nn.Module):
         :param fm_mask:
         :return: fms_att_upsample
         """
-        #spatial attention
-        psi = self.SPI(fms_high,fms_low)
-        #channel attention
+        # spatial attention
+        psi = self.SPI(fms_high, fms_low)
+        # channel attention
         b, c, h, w = fms_high.shape
-        fms_high_gp = nn.AvgPool2d(fms_high.shape[2:])(fms_high).view(len(fms_high), c, 1, 1)
+        fms_high_gp = nn.AvgPool2d(fms_high.shape[2:])(fms_high).view(
+            len(fms_high), c, 1, 1
+        )
         fms_high_gp = self.conv1x1(fms_high_gp)
         fms_high_gp = self.bn_high(fms_high_gp)
         fms_high_gp = self.relu(fms_high_gp)
@@ -112,18 +125,25 @@ class SAU_GAU_conc_residual(nn.Module):
         fms_att = fms_low_mask * fms_high_gp
         fms_att = fms_att * psi
         if self.upsample:
-            fms_high = F.interpolate(fms_high,size=fms_att.shape[2:])
+            fms_high = F.interpolate(fms_high, size=fms_att.shape[2:])
             # print(fms_att.shape,fms_high.shape)
-            fms = torch.cat([fms_high,fms_att],1)
+            fms = torch.cat([fms_high, fms_att], 1)
             fms = self.conv_upsample(fms)
             out = self.relu(self.bn_upsample(fms))
         else:
-            out = self.relu(
-                self.bn_reduction(self.conv_reduction(fms_high)) + fms_att)
+            out = self.relu(self.bn_reduction(self.conv_reduction(fms_high)) + fms_att)
         return out
 
+
 class DDCNN(nn.Module):
-    def __init__(self, in_channel=3, out_channel=1, deepsupervision=False, residual=True, **kwargs):
+    def __init__(
+        self,
+        in_channel=3,
+        out_channel=1,
+        deepsupervision=False,
+        residual=True,
+        **kwargs
+    ):
         super(DDCNN, self).__init__()
 
         self.deepsupervision = deepsupervision
@@ -136,25 +156,45 @@ class DDCNN(nn.Module):
 
         self.pool = nn.MaxPool2d(2, 2)
 
-        self.conv0_0 = DoubleConv(in_channel*2, nb_filter[0], residual=residual)
+        self.conv0_0 = DoubleConv(in_channel * 2, nb_filter[0], residual=residual)
         self.conv1_0 = DoubleConv(nb_filter[0], nb_filter[1], residual=residual)
         self.conv2_0 = DoubleConv(nb_filter[1], nb_filter[2], residual=residual)
         self.conv3_0 = DoubleConv(nb_filter[2], nb_filter[3], residual=residual)
         self.conv4_0 = DoubleConv(nb_filter[3], nb_filter[4], residual=residual)
 
-        self.gau1_0 = SAU_GAU_conc_residual(nb_filter[1], nb_filter[0], residual=residual)
-        self.gau1_1 = SAU_GAU_conc_residual(nb_filter[1], nb_filter[0], residual=residual)
-        self.gau1_2 = SAU_GAU_conc_residual(nb_filter[1], nb_filter[0], residual=residual)
-        self.gau1_3 = SAU_GAU_conc_residual(nb_filter[1], nb_filter[0], residual=residual)
+        self.gau1_0 = SAU_GAU_conc_residual(
+            nb_filter[1], nb_filter[0], residual=residual
+        )
+        self.gau1_1 = SAU_GAU_conc_residual(
+            nb_filter[1], nb_filter[0], residual=residual
+        )
+        self.gau1_2 = SAU_GAU_conc_residual(
+            nb_filter[1], nb_filter[0], residual=residual
+        )
+        self.gau1_3 = SAU_GAU_conc_residual(
+            nb_filter[1], nb_filter[0], residual=residual
+        )
 
-        self.gau2_0 = SAU_GAU_conc_residual(nb_filter[2], nb_filter[1], residual=residual)
-        self.gau2_1 = SAU_GAU_conc_residual(nb_filter[2], nb_filter[1], residual=residual)
-        self.gau2_2 = SAU_GAU_conc_residual(nb_filter[2], nb_filter[1], residual=residual)
+        self.gau2_0 = SAU_GAU_conc_residual(
+            nb_filter[2], nb_filter[1], residual=residual
+        )
+        self.gau2_1 = SAU_GAU_conc_residual(
+            nb_filter[2], nb_filter[1], residual=residual
+        )
+        self.gau2_2 = SAU_GAU_conc_residual(
+            nb_filter[2], nb_filter[1], residual=residual
+        )
 
-        self.gau3_0 = SAU_GAU_conc_residual(nb_filter[3], nb_filter[2], residual=residual)
-        self.gau3_1 = SAU_GAU_conc_residual(nb_filter[3], nb_filter[2], residual=residual)
+        self.gau3_0 = SAU_GAU_conc_residual(
+            nb_filter[3], nb_filter[2], residual=residual
+        )
+        self.gau3_1 = SAU_GAU_conc_residual(
+            nb_filter[3], nb_filter[2], residual=residual
+        )
 
-        self.gau4_0 = SAU_GAU_conc_residual(nb_filter[4], nb_filter[3], residual=residual)
+        self.gau4_0 = SAU_GAU_conc_residual(
+            nb_filter[4], nb_filter[3], residual=residual
+        )
 
         if self.deepsupervision:
             self.final1 = nn.Conv2d(nb_filter[0], out_channel, kernel_size=1)
@@ -166,8 +206,8 @@ class DDCNN(nn.Module):
 
     def forward(self, x):
         x_h, x_w = x.size(2), x.size(3)
-        x1 = x[:,0:self.num_band,::]
-        x2 = x[:,self.num_band:,::]
+        x1 = x[:, 0 : self.num_band, ::]
+        x2 = x[:, self.num_band :, ::]
         diff = x1 - x2
         diff_att = self.diff_att1(diff)
         # diff_att = self.diff_att2(diff_att)

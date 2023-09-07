@@ -2,20 +2,30 @@ import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
 
 model_urls = {
-    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+    "mobilenet_v2": "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
 }
 
 
 class ConvBNReLU(nn.Sequential):
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1, dilation=1):
+    def __init__(
+        self, in_planes, out_planes, kernel_size=3, stride=1, groups=1, dilation=1
+    ):
         padding = (kernel_size - 1) // 2
         if dilation != 1:
             padding = dilation
         super(ConvBNReLU, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, dilation=dilation,
-                      bias=False),
+            nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size,
+                stride,
+                padding,
+                groups=groups,
+                dilation=dilation,
+                bias=False,
+            ),
             nn.BatchNorm2d(out_planes),
-            nn.ReLU6(inplace=True)
+            nn.ReLU6(inplace=True),
         )
 
 
@@ -32,13 +42,21 @@ class InvertedResidual(nn.Module):
         if expand_ratio != 1:
             # pw
             layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1))
-        layers.extend([
-            # dw
-            ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim, dilation=dilation),
-            # pw-linear
-            nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(oup),
-        ])
+        layers.extend(
+            [
+                # dw
+                ConvBNReLU(
+                    hidden_dim,
+                    hidden_dim,
+                    stride=stride,
+                    groups=hidden_dim,
+                    dilation=dilation,
+                ),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            ]
+        )
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -75,7 +93,15 @@ class MobileNetV2(nn.Module):
             for i in range(n):
                 stride = s if i == 0 else 1
                 dilation = d if i == 0 else 1
-                features.append(block(input_channel, output_channel, stride, expand_ratio=t, dilation=d))
+                features.append(
+                    block(
+                        input_channel,
+                        output_channel,
+                        stride,
+                        expand_ratio=t,
+                        dilation=d,
+                    )
+                )
                 input_channel = output_channel
         # building last several layers
         features.append(ConvBNReLU(input_channel, self.last_channel, kernel_size=1))
@@ -85,7 +111,7 @@ class MobileNetV2(nn.Module):
         # weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out")
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
             elif isinstance(m, nn.BatchNorm2d):
@@ -107,8 +133,9 @@ class MobileNetV2(nn.Module):
 def mobilenet_v2(pretrained=True, progress=True, **kwargs):
     model = MobileNetV2(**kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(
+            model_urls["mobilenet_v2"], progress=progress
+        )
         print("loading imagenet pretrained mobilenetv2")
         model.load_state_dict(state_dict, strict=False)
         print("loaded imagenet pretrained mobilenetv2")

@@ -1,6 +1,6 @@
-'''
+"""
 R. Caye Daudt, B. Le Saux, and A. Boulch, “Fully convolutional siamese networks for change detection,” in Proceedings - International Conference on Image Processing, ICIP, 2018, pp. 4063–4067.
-'''
+"""
 
 import torch
 import torch.nn as nn
@@ -12,10 +12,12 @@ class FCEF(nn.Module):
         super(FCEF, self).__init__()
 
         self.conv_block_1 = nn.Sequential(
-            nn.Conv2d(in_channels=num_band*2, out_channels=16, kernel_size=3, padding=1),
+            nn.Conv2d(
+                in_channels=num_band * 2, out_channels=16, kernel_size=3, padding=1
+            ),
             nn.ReLU(),
             nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_1 = nn.MaxPool2d(kernel_size=2)
 
@@ -23,7 +25,7 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_2 = nn.MaxPool2d(kernel_size=2)
 
@@ -33,7 +35,7 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_3 = nn.MaxPool2d(kernel_size=2)
 
@@ -43,12 +45,12 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_4 = nn.MaxPool2d(kernel_size=2)
 
         self.up_sample_1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -58,11 +60,11 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_2 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -72,11 +74,11 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_3 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -84,11 +86,11 @@ class FCEF(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=32, out_channels=16, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_4 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -133,4 +135,3 @@ class FCEF(nn.Module):
         concat_feature_8 = torch.cat([up_feature_8, feature_1], dim=1)
         output_feature = self.conv_block_8(concat_feature_8)
         return [output_feature]
-

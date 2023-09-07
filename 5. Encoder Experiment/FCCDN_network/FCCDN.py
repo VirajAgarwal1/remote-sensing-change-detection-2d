@@ -1,12 +1,15 @@
 import torch.nn as nn
 import torch
+
 # import resnet
 from .utils import *
 from .dfm import DF_Module
 from .nlfpn import NL_FPN
 import torch.nn.functional as F
+
 bn_mom = 0.0003
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class FCS(torch.nn.Module):
     def __init__(self, num_band, os=16, use_se=False, **kwargs):
@@ -26,27 +29,69 @@ class FCS(torch.nn.Module):
         se_list = [use_se, use_se, use_se, use_se]
         channel_list = [256, 128, 64, 32]
         # encoder
-        self.block1 = BasicBlock(num_band, channel_list[3], pool_list[3], se_list[3], stride_list[3], dilation_list[3])
-        self.block2 = BasicBlock(channel_list[3], channel_list[2], pool_list[2], se_list[2], stride_list[2], dilation_list[2])
-        self.block3 = BasicBlock(channel_list[2], channel_list[1], pool_list[1], se_list[1], stride_list[1], dilation_list[1])
-        self.block4 = BasicBlock(channel_list[1], channel_list[0], pool_list[0], se_list[0], stride_list[0], dilation_list[0])
+        self.block1 = BasicBlock(
+            num_band,
+            channel_list[3],
+            pool_list[3],
+            se_list[3],
+            stride_list[3],
+            dilation_list[3],
+        )
+        self.block2 = BasicBlock(
+            channel_list[3],
+            channel_list[2],
+            pool_list[2],
+            se_list[2],
+            stride_list[2],
+            dilation_list[2],
+        )
+        self.block3 = BasicBlock(
+            channel_list[2],
+            channel_list[1],
+            pool_list[1],
+            se_list[1],
+            stride_list[1],
+            dilation_list[1],
+        )
+        self.block4 = BasicBlock(
+            channel_list[1],
+            channel_list[0],
+            pool_list[0],
+            se_list[0],
+            stride_list[0],
+            dilation_list[0],
+        )
         # decoder
-        self.decoder3=cat(channel_list[0],channel_list[1], channel_list[1], upsample=pool_list[0])
-        self.decoder2=cat(channel_list[1],channel_list[2], channel_list[2], upsample=pool_list[1])
-        self.decoder1=cat(channel_list[2],channel_list[3], channel_list[3], upsample=pool_list[2])
-        
-        self.df1 = cat(channel_list[3],channel_list[3], channel_list[3], upsample=False)
-        self.df2 = cat(channel_list[2],channel_list[2], channel_list[2], upsample=False)
-        self.df3 = cat(channel_list[1],channel_list[1], channel_list[1], upsample=False)
-        self.df4 = cat(channel_list[0],channel_list[0], channel_list[0], upsample=False)
+        self.decoder3 = cat(
+            channel_list[0], channel_list[1], channel_list[1], upsample=pool_list[0]
+        )
+        self.decoder2 = cat(
+            channel_list[1], channel_list[2], channel_list[2], upsample=pool_list[1]
+        )
+        self.decoder1 = cat(
+            channel_list[2], channel_list[3], channel_list[3], upsample=pool_list[2]
+        )
 
-        self.upsample_x2=nn.Sequential(
-                        nn.Conv2d(channel_list[3],8,kernel_size=3, stride=1, padding=1),
-                        nn.BatchNorm2d(8, momentum=bn_mom),
-                        nn.ReLU(inplace=True),
-                        nn.UpsamplingBilinear2d(scale_factor=2)
-                        )
-        self.conv_out = torch.nn.Conv2d(8,1,kernel_size=3,stride=1,padding=1)
+        self.df1 = cat(
+            channel_list[3], channel_list[3], channel_list[3], upsample=False
+        )
+        self.df2 = cat(
+            channel_list[2], channel_list[2], channel_list[2], upsample=False
+        )
+        self.df3 = cat(
+            channel_list[1], channel_list[1], channel_list[1], upsample=False
+        )
+        self.df4 = cat(
+            channel_list[0], channel_list[0], channel_list[0], upsample=False
+        )
+
+        self.upsample_x2 = nn.Sequential(
+            nn.Conv2d(channel_list[3], 8, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(8, momentum=bn_mom),
+            nn.ReLU(inplace=True),
+            nn.UpsamplingBilinear2d(scale_factor=2),
+        )
+        self.conv_out = torch.nn.Conv2d(8, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         x = x.to(device)
@@ -67,7 +112,7 @@ class FCS(torch.nn.Module):
         y = self.decoder3(c4, c3)
         y = self.decoder2(y, c2)
         y = self.decoder1(y, c1)
-        
+
         y = self.conv_out(self.upsample_x2(y))
         return [y]
 
@@ -90,40 +135,88 @@ class DED(torch.nn.Module):
         se_list = [use_se, use_se, use_se, use_se]
         channel_list = [256, 128, 64, 32]
         # encoder
-        self.block1 = BasicBlock(num_band, channel_list[3], pool_list[3], se_list[3], stride_list[3], dilation_list[3])
-        self.block2 = BasicBlock(channel_list[3], channel_list[2], pool_list[2], se_list[2], stride_list[2], dilation_list[2])
-        self.block3 = BasicBlock(channel_list[2], channel_list[1], pool_list[1], se_list[1], stride_list[1], dilation_list[1])
-        self.block4 = BasicBlock(channel_list[1], channel_list[0], pool_list[0], se_list[0], stride_list[0], dilation_list[0])
+        self.block1 = BasicBlock(
+            num_band,
+            channel_list[3],
+            pool_list[3],
+            se_list[3],
+            stride_list[3],
+            dilation_list[3],
+        )
+        self.block2 = BasicBlock(
+            channel_list[3],
+            channel_list[2],
+            pool_list[2],
+            se_list[2],
+            stride_list[2],
+            dilation_list[2],
+        )
+        self.block3 = BasicBlock(
+            channel_list[2],
+            channel_list[1],
+            pool_list[1],
+            se_list[1],
+            stride_list[1],
+            dilation_list[1],
+        )
+        self.block4 = BasicBlock(
+            channel_list[1],
+            channel_list[0],
+            pool_list[0],
+            se_list[0],
+            stride_list[0],
+            dilation_list[0],
+        )
 
         # center
         # self.center = NL_FPN(channel_list[0], True)
-        
+
         # decoder
-        self.decoder3=cat(channel_list[0],channel_list[1], channel_list[1], upsample=pool_list[0])
-        self.decoder2=cat(channel_list[1],channel_list[2], channel_list[2], upsample=pool_list[1])
-        self.decoder1=cat(channel_list[2],channel_list[3], channel_list[3], upsample=pool_list[2])
-        
+        self.decoder3 = cat(
+            channel_list[0], channel_list[1], channel_list[1], upsample=pool_list[0]
+        )
+        self.decoder2 = cat(
+            channel_list[1], channel_list[2], channel_list[2], upsample=pool_list[1]
+        )
+        self.decoder1 = cat(
+            channel_list[2], channel_list[3], channel_list[3], upsample=pool_list[2]
+        )
+
         # self.df1 = DF_Module(channel_list[3], channel_list[3], True)
         # self.df2 = DF_Module(channel_list[2], channel_list[2], True)
         # self.df3 = DF_Module(channel_list[1], channel_list[1], True)
         # self.df4 = DF_Module(channel_list[0], channel_list[0], True)
 
-        self.df1 = cat(channel_list[3],channel_list[3], channel_list[3], upsample=False)
-        self.df2 = cat(channel_list[2],channel_list[2], channel_list[2], upsample=False)
-        self.df3 = cat(channel_list[1],channel_list[1], channel_list[1], upsample=False)
-        self.df4 = cat(channel_list[0],channel_list[0], channel_list[0], upsample=False)
+        self.df1 = cat(
+            channel_list[3], channel_list[3], channel_list[3], upsample=False
+        )
+        self.df2 = cat(
+            channel_list[2], channel_list[2], channel_list[2], upsample=False
+        )
+        self.df3 = cat(
+            channel_list[1], channel_list[1], channel_list[1], upsample=False
+        )
+        self.df4 = cat(
+            channel_list[0], channel_list[0], channel_list[0], upsample=False
+        )
 
-        self.catc3=cat(channel_list[0],channel_list[1], channel_list[1], upsample=pool_list[0])
-        self.catc2=cat(channel_list[1],channel_list[2], channel_list[2], upsample=pool_list[1])
-        self.catc1=cat(channel_list[2],channel_list[3], channel_list[3], upsample=pool_list[2])
+        self.catc3 = cat(
+            channel_list[0], channel_list[1], channel_list[1], upsample=pool_list[0]
+        )
+        self.catc2 = cat(
+            channel_list[1], channel_list[2], channel_list[2], upsample=pool_list[1]
+        )
+        self.catc1 = cat(
+            channel_list[2], channel_list[3], channel_list[3], upsample=pool_list[2]
+        )
 
-        self.upsample_x2=nn.Sequential(
-                        nn.Conv2d(channel_list[3],8,kernel_size=3, stride=1, padding=1),
-                        nn.BatchNorm2d(8, momentum=bn_mom),
-                        nn.ReLU(inplace=True),
-                        nn.UpsamplingBilinear2d(scale_factor=2)
-                        )
-        self.conv_out = torch.nn.Conv2d(8,1,kernel_size=3,stride=1,padding=1)
+        self.upsample_x2 = nn.Sequential(
+            nn.Conv2d(channel_list[3], 8, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(8, momentum=bn_mom),
+            nn.ReLU(inplace=True),
+            nn.UpsamplingBilinear2d(scale_factor=2),
+        )
+        self.conv_out = torch.nn.Conv2d(8, 1, kernel_size=3, stride=1, padding=1)
         # self.conv_out_class = torch.nn.Conv2d(channel_list[3],1, kernel_size=1,stride=1,padding=0)
 
     def forward(self, x):
@@ -176,19 +269,53 @@ class FCCDN(torch.nn.Module):
         se_list = [use_se, use_se, use_se, use_se]
         channel_list = [256, 128, 64, 32]
         # encoder
-        self.block1 = BasicBlock(num_band, channel_list[3], pool_list[3], se_list[3], stride_list[3], dilation_list[3])
-        self.block2 = BasicBlock(channel_list[3], channel_list[2], pool_list[2], se_list[2], stride_list[2], dilation_list[2])
-        self.block3 = BasicBlock(channel_list[2], channel_list[1], pool_list[1], se_list[1], stride_list[1], dilation_list[1])
-        self.block4 = BasicBlock(channel_list[1], channel_list[0], pool_list[0], se_list[0], stride_list[0], dilation_list[0])
+        self.block1 = BasicBlock(
+            num_band,
+            channel_list[3],
+            pool_list[3],
+            se_list[3],
+            stride_list[3],
+            dilation_list[3],
+        )
+        self.block2 = BasicBlock(
+            channel_list[3],
+            channel_list[2],
+            pool_list[2],
+            se_list[2],
+            stride_list[2],
+            dilation_list[2],
+        )
+        self.block3 = BasicBlock(
+            channel_list[2],
+            channel_list[1],
+            pool_list[1],
+            se_list[1],
+            stride_list[1],
+            dilation_list[1],
+        )
+        self.block4 = BasicBlock(
+            channel_list[1],
+            channel_list[0],
+            pool_list[0],
+            se_list[0],
+            stride_list[0],
+            dilation_list[0],
+        )
 
         # center
         self.center = NL_FPN(channel_list[0], True)
-        
+
         # decoder
-        self.decoder3=cat(channel_list[0],channel_list[1], channel_list[1], upsample=pool_list[0])
-        self.decoder2=cat(channel_list[1],channel_list[2], channel_list[2], upsample=pool_list[1])
-        self.decoder1=cat(channel_list[2],channel_list[3], channel_list[3], upsample=pool_list[2])
-        
+        self.decoder3 = cat(
+            channel_list[0], channel_list[1], channel_list[1], upsample=pool_list[0]
+        )
+        self.decoder2 = cat(
+            channel_list[1], channel_list[2], channel_list[2], upsample=pool_list[1]
+        )
+        self.decoder1 = cat(
+            channel_list[2], channel_list[3], channel_list[3], upsample=pool_list[2]
+        )
+
         self.df1 = DF_Module(channel_list[3], channel_list[3], True)
         self.df2 = DF_Module(channel_list[2], channel_list[2], True)
         self.df3 = DF_Module(channel_list[1], channel_list[1], True)
@@ -199,21 +326,28 @@ class FCCDN(torch.nn.Module):
         # self.df3 = cat(channel_list[1],channel_list[1], channel_list[1], upsample=False)
         # self.df4 = cat(channel_list[0],channel_list[0], channel_list[0], upsample=False)
 
-        self.catc3=cat(channel_list[0],channel_list[1], channel_list[1], upsample=pool_list[0])
-        self.catc2=cat(channel_list[1],channel_list[2], channel_list[2], upsample=pool_list[1])
-        self.catc1=cat(channel_list[2],channel_list[3], channel_list[3], upsample=pool_list[2])
+        self.catc3 = cat(
+            channel_list[0], channel_list[1], channel_list[1], upsample=pool_list[0]
+        )
+        self.catc2 = cat(
+            channel_list[1], channel_list[2], channel_list[2], upsample=pool_list[1]
+        )
+        self.catc1 = cat(
+            channel_list[2], channel_list[3], channel_list[3], upsample=pool_list[2]
+        )
 
-        self.upsample_x2=nn.Sequential(
-                        nn.Conv2d(channel_list[3],8,kernel_size=3, stride=1, padding=1),
-                        nn.BatchNorm2d(8, momentum=bn_mom),
-                        nn.ReLU(inplace=True),
-                        nn.UpsamplingBilinear2d(scale_factor=2)
-                        )
-        self.conv_out = torch.nn.Conv2d(8,1,kernel_size=3,stride=1,padding=1)
-        self.conv_out_class = torch.nn.Conv2d(channel_list[3],1, kernel_size=1,stride=1,padding=0)
+        self.upsample_x2 = nn.Sequential(
+            nn.Conv2d(channel_list[3], 8, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(8, momentum=bn_mom),
+            nn.ReLU(inplace=True),
+            nn.UpsamplingBilinear2d(scale_factor=2),
+        )
+        self.conv_out = torch.nn.Conv2d(8, 1, kernel_size=3, stride=1, padding=1)
+        self.conv_out_class = torch.nn.Conv2d(
+            channel_list[3], 1, kernel_size=1, stride=1, padding=0
+        )
 
     def forward(self, x0, x1):
-
         x0 = x0.to(device)
         x1 = x1.to(device)
 
@@ -226,7 +360,7 @@ class FCCDN(torch.nn.Module):
         y2 = self.block2(y2)
         y2 = self.block3(y2)
         y2 = self.block4(y2)
-        
+
         return y1, y2
 
 

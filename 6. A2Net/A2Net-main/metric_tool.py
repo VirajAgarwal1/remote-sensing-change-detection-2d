@@ -105,7 +105,15 @@ def cm2score(confusion_matrix):
     pre = ((tp + fn) * (tp + fp) + (tn + fp) * (tn + fn)) / (tp + fp + tn + fn) ** 2
     # kappa
     kappa = (oa - pre) / (1 - pre)
-    score_dict = {'Kappa': kappa, 'IoU': iou, 'F1': f1, 'OA': oa, 'recall': recall, 'precision': precision, 'Pre': pre}
+    score_dict = {
+        "Kappa": kappa,
+        "IoU": iou,
+        "F1": f1,
+        "OA": oa,
+        "recall": recall,
+        "precision": precision,
+        "Pre": pre,
+    }
     return score_dict
 
 
@@ -121,8 +129,10 @@ def get_confuse_matrix(num_classes, label_gts, label_preds):
         :return: <np.ndarray> values for confusion matrix
         """
         mask = (label_gt >= 0) & (label_gt < num_classes)
-        hist = np.bincount(num_classes * label_gt[mask].astype(int) + label_pred[mask],
-                           minlength=num_classes ** 2).reshape(num_classes, num_classes)
+        hist = np.bincount(
+            num_classes * label_gt[mask].astype(int) + label_pred[mask],
+            minlength=num_classes**2,
+        ).reshape(num_classes, num_classes)
         return hist
 
     confusion_matrix = np.zeros((num_classes, num_classes))

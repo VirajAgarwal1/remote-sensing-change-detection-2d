@@ -1,6 +1,6 @@
-'''
+"""
 R. Caye Daudt, B. Le Saux, and A. Boulch, “Fully convolutional siamese networks for change detection,” in Proceedings - International Conference on Image Processing, ICIP, 2018, pp. 4063–4067.
-'''
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,7 +14,7 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=num_band, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_1 = nn.MaxPool2d(kernel_size=2)
 
@@ -22,7 +22,7 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_2 = nn.MaxPool2d(kernel_size=2)
 
@@ -32,7 +32,7 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_3 = nn.MaxPool2d(kernel_size=2)
 
@@ -42,12 +42,12 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.max_pool_4 = nn.MaxPool2d(kernel_size=2)
 
         self.up_sample_1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -57,11 +57,11 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_2 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -71,11 +71,11 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_3 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -83,11 +83,11 @@ class FCSiamConc(nn.Module):
             nn.Conv2d(in_channels=96, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=32, out_channels=16, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.up_sample_4 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
         )
@@ -120,10 +120,14 @@ class FCSiamConc(nn.Module):
         # decoder
         #####################
         x_h, x_w = x.size(2), x.size(3)
-        x1 = x[:,0:self.num_band,::]
-        x2 = x[:,self.num_band:,::]
-        down_feature_41, feature_41, feature_31, feature_21, feature_11 = self.encoder(x1)
-        down_feature_42, feature_42, feature_32, feature_22, feature_12 = self.encoder(x2)
+        x1 = x[:, 0 : self.num_band, ::]
+        x2 = x[:, self.num_band :, ::]
+        down_feature_41, feature_41, feature_31, feature_21, feature_11 = self.encoder(
+            x1
+        )
+        down_feature_42, feature_42, feature_32, feature_22, feature_12 = self.encoder(
+            x2
+        )
 
         up_feature_5 = self.up_sample_1(down_feature_41)
         concat_feature_5 = torch.cat([up_feature_5, feature_41, feature_42], dim=1)
@@ -141,4 +145,3 @@ class FCSiamConc(nn.Module):
         concat_feature_8 = torch.cat([up_feature_8, feature_11, feature_12], dim=1)
         output_feature = self.conv_block_8(concat_feature_8)
         return [output_feature]
-

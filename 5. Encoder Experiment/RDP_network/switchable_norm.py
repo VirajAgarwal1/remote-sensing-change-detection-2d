@@ -43,7 +43,7 @@ class SwitchNorm1d(nn.Module):
                 self.running_var.add_((1 - self.momentum) * var_bn.data)
             else:
                 self.running_mean.add_(mean_bn.data)
-                self.running_var.add_(mean_bn.data ** 2 + var_bn.data)
+                self.running_var.add_(mean_bn.data**2 + var_bn.data)
         else:
             mean_bn = torch.autograd.Variable(self.running_mean)
             var_bn = torch.autograd.Variable(self.running_var)
@@ -111,13 +111,13 @@ class SwitchNorm2d(nn.Module):
         var_in = x.var(-1, keepdim=True)
 
         mean_ln = mean_in.mean(1, keepdim=True)
-        temp = var_in + mean_in ** 2
-        var_ln = temp.mean(1, keepdim=True) - mean_ln ** 2
+        temp = var_in + mean_in**2
+        var_ln = temp.mean(1, keepdim=True) - mean_ln**2
 
         if self.using_bn:
             if self.training:
                 mean_bn = mean_in.mean(0, keepdim=True)
-                var_bn = temp.mean(0, keepdim=True) - mean_bn ** 2
+                var_bn = temp.mean(0, keepdim=True) - mean_bn**2
                 if self.using_moving_average:
                     self.running_mean.mul_(self.momentum)
                     self.running_mean.add_((1 - self.momentum) * mean_bn.data)
@@ -125,7 +125,7 @@ class SwitchNorm2d(nn.Module):
                     self.running_var.add_((1 - self.momentum) * var_bn.data)
                 else:
                     self.running_mean.add_(mean_bn.data)
-                    self.running_var.add_(mean_bn.data ** 2 + var_bn.data)
+                    self.running_var.add_(mean_bn.data**2 + var_bn.data)
             else:
                 mean_bn = torch.autograd.Variable(self.running_mean)
                 var_bn = torch.autograd.Variable(self.running_var)
@@ -204,13 +204,13 @@ class SwitchNorm3d(nn.Module):
         var_in = x.var(-1, keepdim=True)
 
         mean_ln = mean_in.mean(1, keepdim=True)
-        temp = var_in + mean_in ** 2
-        var_ln = temp.mean(1, keepdim=True) - mean_ln ** 2
+        temp = var_in + mean_in**2
+        var_ln = temp.mean(1, keepdim=True) - mean_ln**2
 
         if self.using_bn:
             if self.training:
                 mean_bn = mean_in.mean(0, keepdim=True)
-                var_bn = temp.mean(0, keepdim=True) - mean_bn ** 2
+                var_bn = temp.mean(0, keepdim=True) - mean_bn**2
                 if self.using_moving_average:
                     self.running_mean.mul_(self.momentum)
                     self.running_mean.add_((1 - self.momentum) * mean_bn.data)
@@ -218,7 +218,7 @@ class SwitchNorm3d(nn.Module):
                     self.running_var.add_((1 - self.momentum) * var_bn.data)
                 else:
                     self.running_mean.add_(mean_bn.data)
-                    self.running_var.add_(mean_bn.data ** 2 + var_bn.data)
+                    self.running_var.add_(mean_bn.data**2 + var_bn.data)
             else:
                 mean_bn = torch.autograd.Variable(self.running_mean)
                 var_bn = torch.autograd.Variable(self.running_var)

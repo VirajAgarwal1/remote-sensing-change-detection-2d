@@ -8,12 +8,13 @@ import numpy as np
 import torch.nn.functional as F
 import os
 
+
 class vgg16_base(nn.Module):
     def __init__(self, pretrained_path):
-        super(vgg16_base,self).__init__()
+        super(vgg16_base, self).__init__()
         base_model = vgg16(pretrained=False)
         if pretrained_path is not None:
-            old_dict = torch.load(os.path.join(pretrained_path, 'vgg16-397923af.pth'))
+            old_dict = torch.load(os.path.join(pretrained_path, "vgg16-397923af.pth"))
             model_dict = base_model.state_dict()
             old_dict = {k: v for k, v in old_dict.items() if (k in model_dict)}
             model_dict.update(old_dict)
@@ -21,49 +22,55 @@ class vgg16_base(nn.Module):
         features = list(base_model.features)[:30]
         self.features = nn.ModuleList(features).eval()
 
-    def forward(self,x):
+    def forward(self, x):
         results = []
         for ii, model in enumerate(self.features):
             x = model(x)
-            if ii in {3,8,15,22,29}:
+            if ii in {3, 8, 15, 22, 29}:
                 results.append(x)
         return results
 
+
 class ChannelAttention(nn.Module):
-    def __init__(self, in_channels, ratio = 8):
+    def __init__(self, in_channels, ratio=8):
         super(ChannelAttention, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.max_pool = nn.AdaptiveMaxPool2d(1)
-        self.fc1 = nn.Conv2d(in_channels,in_channels//ratio,1,bias=False)
+        self.fc1 = nn.Conv2d(in_channels, in_channels // ratio, 1, bias=False)
         self.relu1 = nn.ReLU()
-        self.fc2 = nn.Conv2d(in_channels//ratio, in_channels,1,bias=False)
+        self.fc2 = nn.Conv2d(in_channels // ratio, in_channels, 1, bias=False)
         self.sigmod = nn.Sigmoid()
-    def forward(self,x):
+
+    def forward(self, x):
         avg_out = self.fc2(self.relu1(self.fc1(self.avg_pool(x))))
         max_out = self.fc2(self.relu1(self.fc1(self.max_pool(x))))
         out = avg_out + max_out
         return self.sigmod(out)
 
+
 class SpatialAttention(nn.Module):
     def __init__(self):
-        super(SpatialAttention,self).__init__()
-        self.conv1 = nn.Conv2d(2,1,7,padding=3,bias=False)
+        super(SpatialAttention, self).__init__()
+        self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
         self.sigmoid = nn.Sigmoid()
-    def forward(self, x):
-        avg_out = torch.mean(x,dim=1,keepdim=True)
-        max_out = torch.max(x,dim=1,keepdim=True,out=None)[0]
 
-        x = torch.cat([avg_out,max_out],dim=1)
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out = torch.max(x, dim=1, keepdim=True, out=None)[0]
+
+        x = torch.cat([avg_out, max_out], dim=1)
         x = self.conv1(x)
         return self.sigmoid(x)
 
+
 def conv2d_bn(in_channels, out_channels):
     return nn.Sequential(
-        nn.Conv2d(in_channels,out_channels,kernel_size=3,stride=1,padding=1),
+        nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
         nn.PReLU(),
         nn.BatchNorm2d(out_channels),
         nn.Dropout(p=0.6),
     )
+
 
 class DSIFN(nn.Module):
     def __init__(self, num_band=3, num_class=10, pretrained_path=None, **kwargs):
@@ -123,17 +130,35 @@ class DSIFN(nn.Module):
 
     def forward(self, x):
         x_h, x_w = x.size(2), x.size(3)
-        x1 = x[:,0:self.num_band,::]
-        x2 = x[:,self.num_band:,::]
+        x1 = x[:, 0 : self.num_band, ::]
+        x2 = x[:, self.num_band :, ::]
         t1_list = self.base(x1)
         t2_list = self.base(x2)
 
-        t1_f_l3,t1_f_l8,t1_f_l15,t1_f_l22,t1_f_l29 = t1_list[0],t1_list[1],t1_list[2],t1_list[3],t1_list[4]
-        t2_f_l3,t2_f_l8,t2_f_l15,t2_f_l22,t2_f_l29,= t2_list[0],t2_list[1],t2_list[2],t2_list[3],t2_list[4]
+        t1_f_l3, t1_f_l8, t1_f_l15, t1_f_l22, t1_f_l29 = (
+            t1_list[0],
+            t1_list[1],
+            t1_list[2],
+            t1_list[3],
+            t1_list[4],
+        )
+        (
+            t2_f_l3,
+            t2_f_l8,
+            t2_f_l15,
+            t2_f_l22,
+            t2_f_l29,
+        ) = (
+            t2_list[0],
+            t2_list[1],
+            t2_list[2],
+            t2_list[3],
+            t2_list[4],
+        )
 
-        x = torch.cat((t1_f_l29,t2_f_l29),dim=1)
-        #optional to use channel attention module in the first combined feature
-        #在第一个深度特征叠加层之后可以选择使用或者不使用通道注意力模块
+        x = torch.cat((t1_f_l29, t2_f_l29), dim=1)
+        # optional to use channel attention module in the first combined feature
+        # 在第一个深度特征叠加层之后可以选择使用或者不使用通道注意力模块
         # x = self.ca1(x) * x
         x = self.o1_conv1(x)
         x = self.o1_conv2(x)
@@ -143,47 +168,47 @@ class DSIFN(nn.Module):
         branch_1_out = self.o1_conv3(x)
 
         x = self.trans_conv1(x)
-        x = torch.cat((x,t1_f_l22,t2_f_l22),dim=1)
-        x = self.ca2(x)*x
-        #According to the amount of the training data, appropriately reduce the use of conv layers to prevent overfitting
-        #根据训练数据的大小，适当减少conv层的使用来防止过拟合
+        x = torch.cat((x, t1_f_l22, t2_f_l22), dim=1)
+        x = self.ca2(x) * x
+        # According to the amount of the training data, appropriately reduce the use of conv layers to prevent overfitting
+        # 根据训练数据的大小，适当减少conv层的使用来防止过拟合
         x = self.o2_conv1(x)
         x = self.o2_conv2(x)
         x = self.o2_conv3(x)
-        x = self.sa2(x) *x
+        x = self.sa2(x) * x
         x = self.bn_sa2(x)
 
         branch_2_out = self.o2_conv4(x)
 
         x = self.trans_conv2(x)
-        x = torch.cat((x,t1_f_l15,t2_f_l15),dim=1)
-        x = self.ca3(x)*x
+        x = torch.cat((x, t1_f_l15, t2_f_l15), dim=1)
+        x = self.ca3(x) * x
         x = self.o3_conv1(x)
         x = self.o3_conv2(x)
         x = self.o3_conv3(x)
-        x = self.sa3(x) *x
+        x = self.sa3(x) * x
         x = self.bn_sa3(x)
 
         branch_3_out = self.o3_conv4(x)
 
         x = self.trans_conv3(x)
-        x = torch.cat((x,t1_f_l8,t2_f_l8),dim=1)
-        x = self.ca4(x)*x
+        x = torch.cat((x, t1_f_l8, t2_f_l8), dim=1)
+        x = self.ca4(x) * x
         x = self.o4_conv1(x)
         x = self.o4_conv2(x)
         x = self.o4_conv3(x)
-        x = self.sa4(x) *x
+        x = self.sa4(x) * x
         x = self.bn_sa4(x)
 
         branch_4_out = self.o4_conv4(x)
 
         x = self.trans_conv4(x)
-        x = torch.cat((x,t1_f_l3,t2_f_l3),dim=1)
-        x = self.ca5(x)*x
+        x = torch.cat((x, t1_f_l3, t2_f_l3), dim=1)
+        x = self.ca5(x) * x
         x = self.o5_conv1(x)
         x = self.o5_conv2(x)
         x = self.o5_conv3(x)
-        x = self.sa5(x) *x
+        x = self.sa5(x) * x
         x = self.bn_sa5(x)
 
         x = F.interpolate(x, size=(x_h, x_w), mode="nearest")

@@ -13,5 +13,3 @@ def make_numpy_grid(tensor_data, pad_value=0, padding=0):
 
 def de_norm(tensor_data):
     return tensor_data * 0.5 + 0.5
-
-
